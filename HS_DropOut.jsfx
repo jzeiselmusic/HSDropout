@@ -1,10 +1,10 @@
-// Drop-Out Plug-in
+// Drop-Out 
 
 // idea is to make a plugin with 2 values per LR channel - drop-out size and drop-out rate
 // drop out size determines how big the gaps are and drop out rate determines how often it occurs
 
 
-desc: HS Drop Out
+desc: High School Drop-Out
 
 slider1:LRate=0<.1,50,.1> Left Rate
 slider2:RRate=0<.1,50,.1> Right Rate
