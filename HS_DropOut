@@ -1,0 +1,192 @@
+// Drop-Out Plug-in
+
+// idea is to make a plugin with 2 values per LR channel - drop-out size and drop-out rate
+// drop out size determines how big the gaps are and drop out rate determines how often it occurs
+
+
+desc: HS Drop Out
+
+slider1:LRate=0<.1,50,.1> Left Rate
+slider2:RRate=0<.1,50,.1> Right Rate
+slider3:LSize=0<0,3000,1> Left Size
+slider4:RSize=0<0,3000,1> Right Size
+slider5:LDepth=100<100,1,1> Left Depth
+slider6:RDepth=100<100,1,1> Right Depth
+
+in_pin:left input
+in_pin:right input
+out_pin:left output
+out_pin:right output
+
+@init
+
+	SR = srate;
+
+	// coefficients for CUTOFF FREQ = 10k
+	b0 = .1325;
+	b1 = .3974;
+	b2 = .3974;
+	b3 = .1325;
+	
+	a1 = .02679;
+	a2 = .3523;
+	a3 = .0247;
+	// 
+
+	IN_memloc_L = 100;
+	IN_memloc_R = 200;
+	OUT_memloc_L = 300;
+	OUT_memloc_R = 400;
+
+	IN_memloc_L[1] = 0;
+	IN_memloc_L[2] = 0;
+	IN_memloc_L[3] = 0;
+	
+	IN_memloc_R[1] = 0;
+	IN_memloc_R[2] = 0;
+	IN_memloc_R[3] = 0;
+
+	OUT_memloc_L[1] = 0;
+	OUT_memloc_L[2] = 0;
+	OUT_memloc_L[3] = 0;
+	
+	OUT_memloc_R[1] = 0;
+	OUT_memloc_R[2] = 0;
+	OUT_memloc_R[3] = 0;
+
+	
+	
+	function drop (depth) 
+
+	// make sample equal to 0
+
+	(
+		this = this * (1 / depth);
+	);
+
+	function getRandom (k)
+
+	// Get some random integer with maximum k
+
+	(
+		floor(rand(k));
+	);
+
+	n = 0;
+	L = 0;
+	R = 0;
+
+
+@slider
+
+	rateLeft = LRate;
+	rateRight = RRate;
+
+	sizeLeft = LSize;
+	sizeRight = RSize;
+
+	depthLeft = LDepth;
+	depthRight = RDepth;
+
+
+@sample
+
+
+	sizeLeft == 0 ?
+	(
+		// Rate Left
+		// rateLeft has chances between 1/2 and 1/100
+		getRandom(99999) <= rateLeft-1 ?
+		(
+			spl0.drop(depthLeft);
+		);
+	);
+
+
+	sizeRight == 0 ?
+	(
+		// Rate Right
+		// rateRight has chances between 1/2 and 1/100
+		getRandom(99999) <= rateRight-1 ?
+		(
+			spl1.drop(depthRight);
+		);
+	);
+
+	sizeLeft != 0 ?
+	(
+		L == 0 ?
+		(
+			getRandom(99999) <= rateLeft - 1 ?
+			(
+				spl0.drop(depthLeft);
+				L = L + 1;
+
+			);
+		);
+		(L > 0) && (L < sizeLeft) ?
+		(
+			spl0.drop(depthLeft);
+			L = L + 1;
+		);
+		L == sizeLeft ?
+		(
+			L = 0;
+		);
+		
+	);
+
+	sizeRight != 0 ?
+	(
+		R == 0 ?
+		(
+			getRandom(99999) <= rateRight - 1 ?
+			(
+				spl1.drop(depthRight);
+				R = R + 1;
+
+			);
+		);
+		(R > 0) && (R < sizeRight) ?
+		(
+			spl1.drop(depthRight);
+			R = R + 1;
+		);
+		R == sizeRight ?
+		(
+			R = 0;
+		);
+		
+	);
+
+	sample0 = spl0;
+	sample1 = spl1;
+	
+	
+	spl0 = b0*sample0 + b1*IN_memloc_L[1] + b2*IN_memloc_L[2] + b3*IN_memloc_L[3] 
+		+ a1*OUT_memloc_L[1] + a2*OUT_memloc_L[2] + a3*OUT_memloc_L[3];
+
+	spl1 = b0*sample1 + b1*IN_memloc_R[1] + b2*IN_memloc_R[2] + b3*IN_memloc_R[3] 
+		+ a1*OUT_memloc_R[1] + a2*OUT_memloc_R[2] + a3*OUT_memloc_R[3];
+
+	IN_memloc_L[3] = IN_memloc_L[2];
+	IN_memloc_L[2] = IN_memloc_L[1];
+	IN_memloc_L[1] = sample0;
+
+	IN_memloc_R[3] = IN_memloc_R[2];
+	IN_memloc_R[2] = IN_memloc_R[1];
+	IN_memloc_R[1] = sample1;
+
+	OUT_memloc_L[3] = OUT_memloc_L[2];
+	OUT_memloc_L[2] = OUT_memloc_L[1];
+	OUT_memloc_L[1] = spl0;
+	
+	OUT_memloc_R[3] = OUT_memloc_R[2];
+	OUT_memloc_R[2] = OUT_memloc_R[1];
+	OUT_memloc_R[1] = spl1;
+
+	
+	
+	
+
+	
